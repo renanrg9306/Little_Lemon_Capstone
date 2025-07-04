@@ -83,4 +83,44 @@ BEGIN
 	DELETE  FROM orders WHERE IdOrder = p_IdOrder;
 END//
 DELIMITER ;
+/*---------------------------------------------- FUNCTION TO CHECK TABLE AVAILABLE----------------------------------------------------------------------------*/
+DELIMITER //
+CREATE FUNCTION CheckingAvailableTable(Booking_Date DATE, Table_Number INT)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+	DECLARE Availability INT;
+    SELECT COUNT(*) INTO Availability FROM booking WHERE Date = Booking_Date AND Table_Number = Table_Number;
+    IF Availability > 0 THEN
+		RETURN 0;
+	ELSE 
+		RETURN 1;
+	END IF;
+END //
+DELIMITER ;
+DROP FUNCTION CheckingAvailableTable;
+
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+DROP PROCEDURE AddValidBooking;
+DELIMITER //
+CREATE PROCEDURE AddValidBooking(
+	IN p_Booking_Date DATE,
+    IN p_Table_Number INT
+)
+BEGIN 
+	DECLARE Available INT;
+	SELECT CheckingAvailableTable(p_Booking_Date, p_Table_Number) INTO Available;
+    
+    START TRANSACTION;
+	
+	IF Available > 0 THEN
+		ROLLBACK;
+	ELSE
+		INSERT INTO booking(IdStaff, IdCustomer, Date, Table_Number)
+        VALUES(1,1, p_Booking_Date, p_Table_Number);
+        COMMIT;
+	END IF;
+END //
+DELIMITER ;
+DROP PROCEDURE AddValidBooking;
+CALL AddValidBooking('2022-10-10',1);
